@@ -2,6 +2,7 @@ package com.sujan.chatbot.backend.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -24,37 +25,48 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
-    // ─── 2. Spring MVC Exceptions ─────────────────────────────────────────────
+    // ─── 2. Validation Exceptions ───────────────────────────────────────
 
-    /**
-     * Handles: URL path doesn't match any controller
-     * Triggered by: Calling /api/chat instead of /api/chats (sound familiar? 😄)
-     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidationErrors(
+            MethodArgumentNotValidException ex) {
+
+        // Extract the first validation error message
+        String message = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(fieldError -> fieldError.getField() + ": " + fieldError.getDefaultMessage())
+                .findFirst()
+                .orElse("Validation failed");
+
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "VALIDATION_ERROR",
+                message
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    // ─── 3. Spring MVC Exceptions ─────────────────────────────────────────────
+
     @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNoResourceFound(NoResourceFoundException ex) {
+    public ResponseEntity<ErrorResponse> handleNoResourceFound(
+            NoResourceFoundException ex) {
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
                 "ENDPOINT_NOT_FOUND",
-                "The requested endpoint does not exist"  // Safe — no internals leaked
+                "The requested endpoint does not exist"
         );
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
-    // ─── 3. Catch-All Safety Net ──────────────────────────────────────────────
+    // ─── 4. Catch-All ─────────────────────────────────────────────────────────
 
-    /**
-     * Handles: Anything we didn't anticipate
-     * Triggered by: Any unhandled exception
-     * Rule: NEVER expose the real error message to the client
-     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
-        // ⚠️ Log the REAL error for developers (we'll add proper logging later)
         System.err.println("Unexpected error: " + ex.getMessage());
-
-        // Return a SAFE message to the client — no internals
         ErrorResponse error = new ErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),  // 500
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "INTERNAL_SERVER_ERROR",
                 "An unexpected error occurred. Please try again later."
         );

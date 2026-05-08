@@ -5,10 +5,7 @@ import com.sujan.chatbot.backend.model.ChatSession;
 import com.sujan.chatbot.backend.service.ChatService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -32,5 +29,11 @@ public class ChatController {
     public ResponseEntity<List<ChatSessionResponse>> getAllChats() {
         List<ChatSessionResponse> chats = chatService.getAllChats();
         return ResponseEntity.ok(chats);
+    }
+
+    @DeleteMapping("/{chatId}")
+    public ResponseEntity<Void> deleteChat(@PathVariable Long chatId) {
+        chatService.deleteChat(chatId);
+        return ResponseEntity.noContent().build();
     }
 }
