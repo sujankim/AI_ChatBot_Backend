@@ -1,6 +1,6 @@
 package com.sujan.chatbot.backend.service;
 
-import com.sujan.chatbot.backend.dto.ChatSessionResponse;
+import com.sujan.chatbot.backend.dto.response.ChatSessionResponse;
 import com.sujan.chatbot.backend.dto.request.MessageRequest;
 import com.sujan.chatbot.backend.dto.response.MessageResponse;
 

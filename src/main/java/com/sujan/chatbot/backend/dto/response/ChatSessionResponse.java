@@ -1,4 +1,4 @@
-package com.sujan.chatbot.backend.dto;
+package com.sujan.chatbot.backend.dto.response;
 
 import lombok.*;
 
