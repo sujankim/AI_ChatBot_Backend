@@ -23,6 +23,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -55,6 +61,7 @@ public class SecurityConfig {
             JwtAuthenticationFilter jwtAuthFilter
     ) throws Exception {
         http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 // ── Disable CSRF — not needed for stateless JWT APIs ──────────────
                 .csrf(AbstractHttpConfigurer::disable)
 
@@ -139,6 +146,18 @@ public class SecurityConfig {
 
     // ─── Beans ────────────────────────────────────────────────────────────────
 
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:4200"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", configuration);
+        return source;
+    }
+
     /**
      * Loads users from the database by email.
      *  expression lambda (no braces, no return keyword)
@@ -182,7 +201,7 @@ public class SecurityConfig {
 
     /**
      * Exposes AuthenticationManager as a bean for use in AuthController.
-     * ✅ Fix 4: 'throws Exception' is required by the Spring API contract.
+     * 'throws Exception' is required by the Spring API contract.
      *    IntelliJ warns it's never thrown — this is a false positive.
      *    We use @SuppressWarnings to silence it without hiding real issues.
      */
