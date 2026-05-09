@@ -1,6 +1,7 @@
 package com.sujan.chatbot.backend.controller;
 
 import com.sujan.chatbot.backend.dto.response.ChatSessionResponse;
+import com.sujan.chatbot.backend.model.User;
 import com.sujan.chatbot.backend.service.ChatService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -8,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -32,8 +34,9 @@ public class ChatController {
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @PostMapping
-    public ResponseEntity<ChatSessionResponse> createChat() {
-        ChatSessionResponse response = chatService.createChat();
+    public ResponseEntity<ChatSessionResponse> createChat(
+            @AuthenticationPrincipal User user) {
+        ChatSessionResponse response = chatService.createChat(user);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -46,8 +49,9 @@ public class ChatController {
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @GetMapping
-    public ResponseEntity<List<ChatSessionResponse>> getAllChats() {
-        List<ChatSessionResponse> chats = chatService.getAllChats();
+    public ResponseEntity<List<ChatSessionResponse>> getAllChats(
+            @AuthenticationPrincipal User user) {
+        List<ChatSessionResponse> chats = chatService.getAllChats(user);
         return ResponseEntity.ok(chats);
     }
 
@@ -61,8 +65,9 @@ public class ChatController {
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @DeleteMapping("/{chatId}")
-    public ResponseEntity<Void> deleteChat(@PathVariable Long chatId) {
-        chatService.deleteChat(chatId);
+    public ResponseEntity<Void> deleteChat(@PathVariable Long chatId,
+                                           @AuthenticationPrincipal User user) {
+        chatService.deleteChat(chatId, user);
         return ResponseEntity.noContent().build();
     }
 }

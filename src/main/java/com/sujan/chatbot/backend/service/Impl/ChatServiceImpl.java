@@ -9,6 +9,7 @@ import com.sujan.chatbot.backend.mapper.ChatSessionMapper;
 import com.sujan.chatbot.backend.mapper.MessageMapper;
 import com.sujan.chatbot.backend.model.ChatSession;
 import com.sujan.chatbot.backend.model.Message;
+import com.sujan.chatbot.backend.model.User;
 import com.sujan.chatbot.backend.repository.ChatSessionRepository;
 import com.sujan.chatbot.backend.repository.MessageRepository;
 import com.sujan.chatbot.backend.service.BotService;
@@ -44,13 +45,14 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     @Transactional
-    public ChatSessionResponse createChat(){
+    public ChatSessionResponse createChat(User user){
         // 1. Generate a smart default title based on current time
         String title = generateDefaultTitle();
 
         // 2. Build the entity
         ChatSession chatSession = new ChatSession();
         chatSession.setTitle(title);
+        chatSession.setUser(user);
 
         // 3. Persist to database (save() returns the saved entity with id + timestamps)
         ChatSession savedSession = chatSessionRepository.save(chatSession);
@@ -61,16 +63,18 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ChatSessionResponse> getAllChats() {
-        List<ChatSession> sessions = chatSessionRepository.findAllByOrderByCreatedAtDesc();
+    public List<ChatSessionResponse> getAllChats(User user) {
+        List<ChatSession> sessions = chatSessionRepository.findByUserOrderByCreatedAtDesc(user);
         return chatSessionMapper.toResponseList(sessions);
     }
 
     @Override
     @Transactional
-    public List<MessageResponse> sendMessage(Long chatId, MessageRequest request) {
+    public List<MessageResponse> sendMessage(Long chatId,
+                                             MessageRequest request,
+                                             User user) {
         // 1. Find the chat session
-        ChatSession chatSession = chatSessionRepository.findById(chatId)
+        ChatSession chatSession = chatSessionRepository.findByIdAndUser(chatId, user)
                 .orElseThrow(() -> new ChatNotFoundException(chatId));
 
         // 2. Save the USER message
@@ -100,9 +104,9 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<MessageResponse> getMessages(Long chatId) {
+    public List<MessageResponse> getMessages(Long chatId, User user) {
         // Verify chat exists first
-        if(!chatSessionRepository.existsById(chatId)){
+        if(!chatSessionRepository.existsByIdAndUser(chatId, user)){
             throw new ChatNotFoundException(chatId);
         }
 
@@ -113,10 +117,11 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     @Transactional
-    public void deleteChat(Long chatId) {
+    public void deleteChat(Long chatId, User user) {
         // 1. Verify the chat session exists
-        ChatSession chatSession= chatSessionRepository.findById(chatId)
+        ChatSession chatSession = chatSessionRepository.findByIdAndUser(chatId, user)
                 .orElseThrow(() -> new ChatNotFoundException(chatId));
+
 
         // 2. Find all messages associated with the chat
         List<Message> messages =

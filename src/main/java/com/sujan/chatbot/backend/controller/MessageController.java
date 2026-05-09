@@ -2,6 +2,7 @@ package com.sujan.chatbot.backend.controller;
 
 import com.sujan.chatbot.backend.dto.request.MessageRequest;
 import com.sujan.chatbot.backend.dto.response.MessageResponse;
+import com.sujan.chatbot.backend.model.User;
 import com.sujan.chatbot.backend.service.ChatService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -42,9 +44,10 @@ public class MessageController {
     public ResponseEntity<List<MessageResponse>> sendMessage(
             @Parameter(description = "ID of the chat session", required = true)
             @PathVariable Long chatId,
-            @Valid @RequestBody MessageRequest request) {
+            @Valid @RequestBody MessageRequest request,
+            @AuthenticationPrincipal User user) {
 
-        List<MessageResponse> messages = chatService.sendMessage(chatId, request);
+        List<MessageResponse> messages = chatService.sendMessage(chatId, request, user);
         return ResponseEntity.status(HttpStatus.CREATED).body(messages);
     }
 
@@ -60,9 +63,10 @@ public class MessageController {
     @GetMapping
     public ResponseEntity<List<MessageResponse>> getMessages(
             @Parameter(description = "ID of the chat session", required = true)
-            @PathVariable Long chatId) {
+            @PathVariable Long chatId,
+            @AuthenticationPrincipal User user) {
 
-        List<MessageResponse> messages = chatService.getMessages(chatId);
+        List<MessageResponse> messages = chatService.getMessages(chatId, user);
         return ResponseEntity.ok(messages);
     }
 }
