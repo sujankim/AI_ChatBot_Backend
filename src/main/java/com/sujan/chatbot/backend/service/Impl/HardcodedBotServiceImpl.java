@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 public class HardcodedBotServiceImpl implements BotService {
 
     @Override
-    public String generateResponse(String userMessage) {
+    public String generateResponse(String userMessage, Long chatId) {
         // Normalize: lowercase + trim whitespace
         String input = userMessage.toLowerCase().trim();
 

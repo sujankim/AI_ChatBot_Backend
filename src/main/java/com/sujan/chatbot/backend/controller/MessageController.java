@@ -28,8 +28,9 @@ public class MessageController {
 
     @Operation(
             summary = "Send a message",
-            description = "Send a user message to a chat. The bot automatically generates and returns a reply. " +
-                    "Returns both the user message and bot reply in the response."
+            description = "Send a user message. The AI (Google Gemini 3.1 Flash) " +
+                    "automatically generates and returns a reply. " +
+                    "Returns both the user message and AI reply."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Message sent and bot reply generated"),

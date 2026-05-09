@@ -12,7 +12,7 @@ import java.util.Comparator;
 import java.util.List;
 
 @Service
-@Primary   // ← When two beans implement BotService, Spring picks this one
+// @Primary removed — GeminiBotServiceImpl is now @Primary
 public class RuleBasedBotServiceImpl implements BotService {
 
     private final List<IntentPattern> intentPatterns;
@@ -24,7 +24,7 @@ public class RuleBasedBotServiceImpl implements BotService {
     // ─── Core Logic ───────────────────────────────────────────────────────────
 
     @Override
-    public String generateResponse(String userMessage) {
+    public String generateResponse(String userMessage, Long chatId) {
         if (userMessage == null || userMessage.isBlank()) {
             return "I didn't catch that. Could you say something? 😊";
         }

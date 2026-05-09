@@ -7,5 +7,5 @@ public interface BotService {
      * @param userMessage the message typed by the user
      * @return the bot's response text
      */
-    String generateResponse(String userMessage);
+    String generateResponse(String userMessage, Long chatId);
 }

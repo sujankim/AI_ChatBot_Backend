@@ -28,16 +28,18 @@ public class ChatServiceImpl implements ChatService {
     private final MessageMapper messageMapper;
     private final MessageRepository messageRepository;
     private final BotService botService;
+    private final GeminiBotServiceImpl geminiBotService;
 
     public ChatServiceImpl(ChatSessionRepository chatSessionRepository,
                            ChatSessionMapper chatSessionMapper,
                            MessageMapper messageMapper,
-                           MessageRepository messageRepository, BotService botService) {
+                           MessageRepository messageRepository, BotService botService, GeminiBotServiceImpl geminiBotService) {
         this.chatSessionRepository = chatSessionRepository;
         this.chatSessionMapper = chatSessionMapper;
         this.messageMapper = messageMapper;
         this.messageRepository = messageRepository;
         this.botService = botService;
+        this.geminiBotService = geminiBotService;
     }
 
     @Override
@@ -67,7 +69,7 @@ public class ChatServiceImpl implements ChatService {
     @Override
     @Transactional
     public List<MessageResponse> sendMessage(Long chatId, MessageRequest request) {
-        // 1. Find the chat session — throw if not found
+        // 1. Find the chat session
         ChatSession chatSession = chatSessionRepository.findById(chatId)
                 .orElseThrow(() -> new ChatNotFoundException(chatId));
 
@@ -78,8 +80,8 @@ public class ChatServiceImpl implements ChatService {
         userMessage.setChatSession(chatSession);
         Message savedUserMessage = messageRepository.save(userMessage);
 
-        // 3. Generate bot response
-        String botReply = botService.generateResponse(request.getContent());
+        // 3. Generate bot response — NOW PASSES chatId for memory context
+        String botReply = botService.generateResponse(request.getContent(), chatId);
 
         // 4. Save the BOT message
         Message botMessage = new Message();
@@ -127,6 +129,9 @@ public class ChatServiceImpl implements ChatService {
 
         // 4. Delete the chat session itself
         chatSessionRepository.delete(chatSession);
+
+        // Clear AI memory for this chat — no orphaned context left in RAM
+        geminiBotService.clearMemory(chatId);
     }
 
     // ─── Private Helpers ──────────────────────────────────────────────────────
