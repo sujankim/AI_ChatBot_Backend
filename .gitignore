@@ -32,5 +32,14 @@ build/
 ### VS Code ###
 .vscode/
 
+# Environment (NEVER commit these)
 .env
 *.env
+application-local.properties
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.dockerignore
