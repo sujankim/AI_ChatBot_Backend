@@ -32,6 +32,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Configuration
 @EnableWebSecurity
@@ -47,7 +48,9 @@ public class SecurityConfig {
             "/swagger-ui/**",
             "/api-docs/**",
             "/login/**",
-            "/oauth2/**"
+            "/oauth2/**",
+            "/v3/api-docs/**",
+            "/api/health",
     };
 
     @Value("${app.frontend-url:http://localhost:4200}")
@@ -87,28 +90,55 @@ public class SecurityConfig {
                 // Without this: unauthenticated requests → redirect to Google login
                 // With this:    API requests → 401 JSON response
                 //               Browser requests → redirect to Google login
+                // ── Exception Handling ─────────────────────────────────────────────────────
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
-                            // Check if this is an API request (wants JSON)
-                            // or a browser request (wants HTML redirect)
                             String acceptHeader = request.getHeader("Accept");
                             String requestPath  = request.getRequestURI();
 
                             boolean isApiRequest = requestPath.startsWith("/api/")
                                     || (acceptHeader != null && acceptHeader.contains(MediaType.APPLICATION_JSON_VALUE));
 
+                            // Whitelist of public endpoints that should NEVER require authentication
+                            boolean isPublicEndpoint = Stream.of(
+                                    "/api/health",
+                                    "/swagger-ui",
+                                    "/swagger-ui.html",
+                                    "/swagger-ui/**",
+                                    "/api-docs",
+                                    "/api-docs/**",
+                                    "/v3/api-docs",
+                                    "/v3/api-docs/**",
+                                    "/login",
+                                    "/login/**",
+                                    "/oauth2",
+                                    "/oauth2/**"
+                            ).anyMatch(requestPath::startsWith
+                            );
+
+                            if (isPublicEndpoint) {
+                                // Public endpoint — allow access without token
+                                if (requestPath.contains("swagger")) {
+                                    // Swagger — return HTML
+                                    response.setStatus(HttpServletResponse.SC_OK);
+                                    response.setContentType(MediaType.TEXT_HTML_VALUE);
+                                    response.getWriter().write("Swagger UI is public ✅");
+                                } else {
+                                    // Health check — return text
+                                    response.setStatus(HttpServletResponse.SC_OK);
+                                    response.setContentType(MediaType.TEXT_PLAIN_VALUE);
+                                    response.getWriter().write("Backend is alive! 🚀");
+                                }
+                                return;
+                            }
+
                             if (isApiRequest) {
-                                // API request without token → return 401 JSON
-                                // NOT a redirect to Google
                                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                                 response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                                 response.getWriter().write(
-                                        "{\"status\":401," +
-                                                "\"error\":\"UNAUTHORIZED\"," +
-                                                "\"message\":\"Authentication required. Please log in.\"}"
+                                        "{\"status\":401,\"error\":\"UNAUTHORIZED\",\"message\":\"Authentication required. Please log in.\"}"
                                 );
                             } else {
-                                // Browser request → redirect to Google login
                                 response.sendRedirect("/oauth2/authorization/google");
                             }
                         })
