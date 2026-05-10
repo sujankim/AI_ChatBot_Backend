@@ -1,0 +1,37 @@
+# ═══════════════════════════════════════════════════════
+# PRODUCTION PROFILE — Render + Neon
+# All sensitive values come from Render's env var settings
+# ═══════════════════════════════════════════════════════
+
+# ── Neon Database ────────────────────────────────────────
+spring:
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+    # ── Connection Pool ──────────────────────────────────
+    hikari:
+      maximum-pool-size: 3
+      minimum-idle: 1
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # ── Hibernate ──────────────────────────────────────────
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
+
+# ── Production Logging (minimal) ─────────────────────────
+logging:
+  level:
+    org.springframework.web: WARN
+    com.sujan.chatbot: INFO
+
+# ── CORS ─────────────────────────────────────────────────
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:4200}
