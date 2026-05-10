@@ -42,19 +42,21 @@ public class SecurityConfig {
     private final UserRepository userRepository;
     private final JwtService jwtService;
 
+
+    @Value("${app.frontend-url:http://localhost:4200}")
+    private String frontendUrl;
+
     // ─── Public endpoints — no token required ─────────────────────────────────
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/auth/**",
             "/swagger-ui/**",
+            "/swagger-ui.html",
             "/api-docs/**",
+            "/v3/api-docs/**",
             "/login/**",
             "/oauth2/**",
-            "/v3/api-docs/**",
-            "/api/health",
+            "/api/health"
     };
-
-    @Value("${app.frontend-url:http://localhost:4200}")
-    private String frontendUrl;
 
     public SecurityConfig(UserRepository userRepository,
                           JwtService jwtService) {
@@ -97,46 +99,14 @@ public class SecurityConfig {
                             String requestPath  = request.getRequestURI();
 
                             boolean isApiRequest = requestPath.startsWith("/api/")
-                                    || (acceptHeader != null && acceptHeader.contains(MediaType.APPLICATION_JSON_VALUE));
-
-                            // Whitelist of public endpoints that should NEVER require authentication
-                            boolean isPublicEndpoint = Stream.of(
-                                    "/api/health",
-                                    "/swagger-ui",
-                                    "/swagger-ui.html",
-                                    "/swagger-ui/**",
-                                    "/api-docs",
-                                    "/api-docs/**",
-                                    "/v3/api-docs",
-                                    "/v3/api-docs/**",
-                                    "/login",
-                                    "/login/**",
-                                    "/oauth2",
-                                    "/oauth2/**"
-                            ).anyMatch(requestPath::startsWith
-                            );
-
-                            if (isPublicEndpoint) {
-                                // Public endpoint — allow access without token
-                                if (requestPath.contains("swagger")) {
-                                    // Swagger — return HTML
-                                    response.setStatus(HttpServletResponse.SC_OK);
-                                    response.setContentType(MediaType.TEXT_HTML_VALUE);
-                                    response.getWriter().write("Swagger UI is public ✅");
-                                } else {
-                                    // Health check — return text
-                                    response.setStatus(HttpServletResponse.SC_OK);
-                                    response.setContentType(MediaType.TEXT_PLAIN_VALUE);
-                                    response.getWriter().write("Backend is alive! 🚀");
-                                }
-                                return;
-                            }
+                                    || (acceptHeader != null &&
+                                    acceptHeader.contains(MediaType.APPLICATION_JSON_VALUE));
 
                             if (isApiRequest) {
                                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                                 response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                                 response.getWriter().write(
-                                        "{\"status\":401,\"error\":\"UNAUTHORIZED\",\"message\":\"Authentication required. Please log in.\"}"
+                                        "{\"status\":401,\"error\":\"UNAUTHORIZED\",\"message\":\"Authentication required\"}"
                                 );
                             } else {
                                 response.sendRedirect("/oauth2/authorization/google");
