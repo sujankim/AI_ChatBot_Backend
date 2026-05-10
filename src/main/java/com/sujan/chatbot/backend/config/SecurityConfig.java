@@ -5,9 +5,11 @@ import com.sujan.chatbot.backend.model.User;
 import com.sujan.chatbot.backend.repository.UserRepository;
 import com.sujan.chatbot.backend.service.JwtService;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -81,6 +83,38 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
+                // ── Exception Handling ─────────────────────────────────────
+                // Without this: unauthenticated requests → redirect to Google login
+                // With this:    API requests → 401 JSON response
+                //               Browser requests → redirect to Google login
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            // Check if this is an API request (wants JSON)
+                            // or a browser request (wants HTML redirect)
+                            String acceptHeader = request.getHeader("Accept");
+                            String requestPath  = request.getRequestURI();
+
+                            boolean isApiRequest = requestPath.startsWith("/api/")
+                                    || (acceptHeader != null && acceptHeader.contains(MediaType.APPLICATION_JSON_VALUE));
+
+                            if (isApiRequest) {
+                                // API request without token → return 401 JSON
+                                // NOT a redirect to Google
+                                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                                response.getWriter().write(
+                                        "{\"status\":401," +
+                                                "\"error\":\"UNAUTHORIZED\"," +
+                                                "\"message\":\"Authentication required. Please log in.\"}"
+                                );
+                            } else {
+                                // Browser request → redirect to Google login
+                                response.sendRedirect("/oauth2/authorization/google");
+                            }
+                        })
+                )
+
+
                 // ── OAuth2 Google Login ────────────────────────────────────────────
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler((request, response, authentication) -> {
@@ -94,9 +128,7 @@ public class SecurityConfig {
 
                             // Guard: email is required — reject if missing
                             if (email == null || email.isBlank()) {
-                                response.sendRedirect(
-                                        "http://localhost:4200/login?error=email_not_provided"
-                                );
+                                response.sendRedirect(frontendUrl + "/login?error=email_not_provided");
                                 return;
                             }
 
@@ -131,13 +163,11 @@ public class SecurityConfig {
                             response.addCookie(refreshCookie);
 
                             // Redirect to Angular with access token
-                            response.sendRedirect(
-                                    "http://localhost:4200/auth/callback?token=" + accessToken
+                            response.sendRedirect(frontendUrl + "/auth/callback?token=" + accessToken
                             );
                         })
                         .failureHandler((request, response, exception) ->
-                                response.sendRedirect(
-                                        "http://localhost:4200/login?error=oauth2_failed"
+                                response.sendRedirect(frontendUrl + "/login?error=oauth2_failed"
                                 )
                         )
                 )
