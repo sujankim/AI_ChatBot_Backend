@@ -8,14 +8,9 @@ spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
 
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-
+  # ===============================
+  # Google Gemini AI
+  # ===============================
   ai:
     google:
       genai:
@@ -26,6 +21,9 @@ spring:
             temperature: 0.7
             maxOutputTokens: 1000
 
+  # ===============================
+  # Google OAuth2 Login
+  # ===============================
   security:
     oauth2:
       client:
@@ -39,19 +37,45 @@ spring:
               - email
             redirect-uri: "{baseUrl}/login/oauth2/code/google"
 
+  # ===============================
+  # JPA / Hibernate Shared Config
+  # ===============================
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+
+# ===============================
+# Custom App Properties
+# ===============================
 app:
+  backend-url: ${BACKEND_URL:http://localhost:8080}
+  frontend-url: ${FRONTEND_URL:http://localhost:4200}
+
   jwt:
     secret: ${JWT_SECRET}
     access-token-expiry: 900000
     refresh-token-expiry: 604800000
 
-logging:
-  level:
-    org.springframework.web: INFO
-    com.sujan: DEBUG
-
+# ===============================
+# Swagger / OpenAPI
+# ===============================
 springdoc:
   api-docs:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
+    try-it-out-enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+
+# ===============================
+# Logging
+# ===============================
+logging:
+  level:
+    org.springframework.web: INFO
+    com.sujan.chatbot: DEBUG
