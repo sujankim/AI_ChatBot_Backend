@@ -5,6 +5,7 @@ import com.sujan.chatbot.backend.model.User;
 import com.sujan.chatbot.backend.repository.UserRepository;
 import com.sujan.chatbot.backend.service.JwtService;
 import jakarta.servlet.http.Cookie;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -46,6 +47,9 @@ public class SecurityConfig {
             "/login/**",
             "/oauth2/**"
     };
+
+    @Value("${app.frontend-url:http://localhost:4200}")
+    private String frontendUrl;
 
     public SecurityConfig(UserRepository userRepository,
                           JwtService jwtService) {
@@ -149,7 +153,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:4200"));
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:4200",
+                frontendUrl
+        ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
