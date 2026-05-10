@@ -51,6 +51,7 @@ jobs:
         # If any test fails → this step fails
         # Failed step → job fails → deployment BLOCKED ✅
         env:
+          SPRING_PROFILES_ACTIVE: test
           # Tests need some env vars to not fail on missing config
           JWT_SECRET: test-secret-key-for-ci-only-not-real
           GEMINI_API_KEY: test-key
